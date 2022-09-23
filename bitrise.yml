@@ -1,0 +1,70 @@
+format_version: "11"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: react-native
+app:
+  envs:
+  - WORKDIR: .
+  - PROJECT_LOCATION: android
+  - MODULE: android
+  - VARIANT: Debug
+  - BITRISE_PROJECT_PATH: ios/MobilePlatformDemoRn.xcworkspace
+  - BITRISE_SCHEME: MobilePlatformDemoRn
+  - BITRISE_DISTRIBUTION_METHOD: app-store
+workflows:
+  deploy:
+    description: |
+      Tests, builds and deploys the app using *Deploy to bitrise.io* Step.
+
+      Next steps:
+      - Set up an [Apple service with API key](https://devcenter.bitrise.io/en/accounts/connecting-to-services/connecting-to-an-apple-service-with-api-key.html).
+      - Check out [Getting started with React Native apps](https://devcenter.bitrise.io/en/getting-started/getting-started-with-react-native-apps.html).
+    steps:
+    - git-clone@6: {}
+    - yarn@0:
+        inputs:
+        - workdir: $WORKDIR
+        - command: install
+    - yarn@0:
+        inputs:
+        - workdir: $WORKDIR
+        - command: test
+    - install-missing-android-tools@3:
+        inputs:
+        - gradlew_path: $PROJECT_LOCATION/gradlew
+    - android-build@1:
+        inputs:
+        - project_location: $PROJECT_LOCATION
+        - module: $MODULE
+        - variant: $VARIANT
+    - xcode-archive@4:
+        inputs:
+        - project_path: $BITRISE_PROJECT_PATH
+        - scheme: $BITRISE_SCHEME
+        - distribution_method: $BITRISE_DISTRIBUTION_METHOD
+        - configuration: Release
+        - automatic_code_signing: api-key
+    - deploy-to-bitrise-io@2: {}
+  pull_request:
+    description: Runs during every pull request.
+    steps:
+    - git-clone@6: {}
+    - nvm@1:
+        title: Install Node
+    - yarn@0:
+        title: Install NPM dependencies
+        inputs:
+        - workdir: $WORKDIR
+        - command: install
+    - yarn@0:
+        title: Build
+        inputs:
+        - command: build
+    - yarn@0:
+        title: Lint
+        inputs:
+        - command: lint
+    - yarn@0:
+        title: Test
+        inputs:
+        - command: test
+    - deploy-to-bitrise-io@2: {}
