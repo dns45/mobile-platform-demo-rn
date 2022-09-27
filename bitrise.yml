@@ -11,6 +11,16 @@ app:
   - BITRISE_SCHEME: MobilePlatformDemoRn
   - BITRISE_DISTRIBUTION_METHOD: app-store
 workflows:
+  build_ios:
+    description: Build and archive iOS app.
+    before_run:
+    - primary
+    steps:
+    - cocoapods-install@2: {}
+    - certificate-and-profile-installer@1: {}
+    - xcode-archive@4:
+        inputs:
+        - distribution_method: app-store
   deploy:
     description: |
       Tests, builds and deploys the app using *Deploy to bitrise.io* Step.
@@ -44,7 +54,7 @@ workflows:
         - configuration: Release
         - automatic_code_signing: api-key
     - deploy-to-bitrise-io@2: {}
-  pull_request:
+  primary:
     description: Runs during every pull request.
     steps:
     - git-clone@6: {}
@@ -67,4 +77,3 @@ workflows:
         title: Test
         inputs:
         - command: test
-    - deploy-to-bitrise-io@2: {}
